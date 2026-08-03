@@ -39,6 +39,11 @@ urlpatterns = [
         ),
         name="redoc",
     ),
+
+    path(
+        "api/houses/",
+        include("houses.urls"),
+    ),
 ]
 
 if settings.DEBUG:

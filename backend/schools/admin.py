@@ -1,53 +1,77 @@
 from django.contrib import admin
 
-from .models import House
+from .models import School
 
 
-@admin.register(House)
-class HouseAdmin(admin.ModelAdmin):
+@admin.register(School)
+class SchoolAdmin(admin.ModelAdmin):
 
     list_display = (
         "name",
         "code",
-        "school",
+        "city",
         "status",
         "created_at",
     )
 
     list_filter = (
-        "school",
         "status",
+        "city",
+        "state",
     )
 
     search_fields = (
         "name",
         "code",
-        "school__name",
+        "email",
+        "phone",
     )
 
     ordering = (
-        "school",
         "name",
     )
 
     readonly_fields = (
         "created_at",
         "updated_at",
+        "slug",
     )
 
     fieldsets = (
 
         (
-            "House Information",
+            "School Information",
             {
                 "fields": (
-                    "school",
                     "name",
                     "code",
-                    "color",
+                    "slug",
                     "logo",
-                    "description",
                     "status",
+                ),
+            },
+        ),
+
+        (
+            "Contact Information",
+            {
+                "fields": (
+                    "email",
+                    "phone",
+                    "website",
+                ),
+            },
+        ),
+
+        (
+            "Address",
+            {
+                "fields": (
+                    "address",
+                    "city",
+                    "state",
+                    "country",
+                    "pincode",
                 ),
             },
         ),

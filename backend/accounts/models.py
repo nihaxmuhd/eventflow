@@ -1,5 +1,8 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+
+from schools.models import School
+
 from .managers import CustomUserManager
 
 
@@ -13,23 +16,41 @@ class User(AbstractUser):
         MANAGER = "MANAGER", "Manager"
         TEAM_LEADER = "TEAM_LEADER", "Team Leader"
 
+    school = models.ForeignKey(
+        School,
+        on_delete=models.CASCADE,
+        related_name="users",
+        null=True,
+        blank=True,
+    )
+
     role = models.CharField(
         max_length=20,
         choices=Roles.choices,
-        default=Roles.TEAM_LEADER
+        default=Roles.TEAM_LEADER,
     )
 
-    phone = models.CharField(max_length=15, blank=True)
+    phone = models.CharField(
+        max_length=15,
+        blank=True,
+    )
 
     profile_image = models.ImageField(
         upload_to="profiles/",
         blank=True,
-        null=True
+        null=True,
     )
 
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+    )
 
-    updated_at = models.DateTimeField(auto_now=True)
+    updated_at = models.DateTimeField(
+        auto_now=True,
+    )
 
     def __str__(self):
+        if self.school:
+            return f"{self.username} - {self.school.name}"
+
         return self.username
