@@ -7,13 +7,17 @@ from .serializers import (
     EventCategorySerializer,
 )
 
+from core.mixins import SchoolFilteredQuerysetMixin
+
 
 class EventCategoryListCreateAPIView(
     generics.ListCreateAPIView
 ):
 
     queryset = EventCategory.objects.all()
+
     serializer_class = EventCategorySerializer
+
     permission_classes = [CanManageEvent]
 
 
@@ -22,12 +26,15 @@ class EventCategoryRetrieveUpdateDestroyAPIView(
 ):
 
     queryset = EventCategory.objects.all()
+
     serializer_class = EventCategorySerializer
+
     permission_classes = [CanManageEvent]
 
 
 class EventListCreateAPIView(
-    generics.ListCreateAPIView
+    SchoolFilteredQuerysetMixin,
+    generics.ListCreateAPIView,
 ):
 
     queryset = Event.objects.select_related(
@@ -36,11 +43,13 @@ class EventListCreateAPIView(
     )
 
     serializer_class = EventSerializer
+
     permission_classes = [CanManageEvent]
 
 
 class EventRetrieveUpdateDestroyAPIView(
-    generics.RetrieveUpdateDestroyAPIView
+    SchoolFilteredQuerysetMixin,
+    generics.RetrieveUpdateDestroyAPIView,
 ):
 
     queryset = Event.objects.select_related(
@@ -49,4 +58,5 @@ class EventRetrieveUpdateDestroyAPIView(
     )
 
     serializer_class = EventSerializer
+
     permission_classes = [CanManageEvent]

@@ -21,9 +21,16 @@ from .services import (
     update_house,
 )
 
+from core.mixins import SchoolFilteredQuerysetMixin
+
 
 @extend_schema(tags=["Houses"])
-class HouseListCreateAPIView(ListCreateAPIView):
+class HouseListCreateAPIView(
+    SchoolFilteredQuerysetMixin,
+    ListCreateAPIView,
+):
+
+    queryset = get_all_houses()
 
     serializer_class = HouseSerializer
 
@@ -33,10 +40,6 @@ class HouseListCreateAPIView(ListCreateAPIView):
             return [CanViewHouse()]
 
         return [CanManageHouse()]
-
-    def get_queryset(self):
-
-        return get_all_houses()
 
     def create(self, request, *args, **kwargs):
 
@@ -56,9 +59,13 @@ class HouseListCreateAPIView(ListCreateAPIView):
 
 
 @extend_schema(tags=["Houses"])
-class HouseRetrieveUpdateDestroyAPIView(RetrieveUpdateDestroyAPIView):
+class HouseRetrieveUpdateDestroyAPIView(
+    SchoolFilteredQuerysetMixin,
+    RetrieveUpdateDestroyAPIView,
+):
 
     queryset = House.objects.select_related("school")
+
     serializer_class = HouseSerializer
 
     def get_permissions(self):
@@ -96,6 +103,7 @@ class HouseRetrieveUpdateDestroyAPIView(RetrieveUpdateDestroyAPIView):
     def destroy(self, request, *args, **kwargs):
 
         house = self.get_object()
+
         house.delete()
 
         return Response(

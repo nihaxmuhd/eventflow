@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     "results",
     "leaderboard",
     "common",
+    "dashboard",
 ]
 
 MIDDLEWARE = [

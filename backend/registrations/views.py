@@ -4,9 +4,12 @@ from .models import Registration
 from .serializers import RegistrationSerializer
 from .permissions import CanManageRegistration
 
+from core.mixins import SchoolFilteredQuerysetMixin
+
 
 class RegistrationListCreateAPIView(
-    generics.ListCreateAPIView
+    SchoolFilteredQuerysetMixin,
+    generics.ListCreateAPIView,
 ):
 
     queryset = Registration.objects.select_related(
@@ -16,11 +19,13 @@ class RegistrationListCreateAPIView(
     )
 
     serializer_class = RegistrationSerializer
+
     permission_classes = [CanManageRegistration]
 
 
 class RegistrationRetrieveUpdateDestroyAPIView(
-    generics.RetrieveUpdateDestroyAPIView
+    SchoolFilteredQuerysetMixin,
+    generics.RetrieveUpdateDestroyAPIView,
 ):
 
     queryset = Registration.objects.select_related(
@@ -30,4 +35,5 @@ class RegistrationRetrieveUpdateDestroyAPIView(
     )
 
     serializer_class = RegistrationSerializer
+
     permission_classes = [CanManageRegistration]

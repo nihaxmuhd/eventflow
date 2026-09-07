@@ -4,9 +4,12 @@ from .models import Result
 from .serializers import ResultSerializer
 from .permissions import CanManageResult
 
+from core.mixins import SchoolFilteredQuerysetMixin
+
 
 class ResultListCreateAPIView(
-    generics.ListCreateAPIView
+    SchoolFilteredQuerysetMixin,
+    generics.ListCreateAPIView,
 ):
 
     queryset = Result.objects.select_related(
@@ -16,11 +19,13 @@ class ResultListCreateAPIView(
     )
 
     serializer_class = ResultSerializer
+
     permission_classes = [CanManageResult]
 
 
 class ResultRetrieveUpdateDestroyAPIView(
-    generics.RetrieveUpdateDestroyAPIView
+    SchoolFilteredQuerysetMixin,
+    generics.RetrieveUpdateDestroyAPIView,
 ):
 
     queryset = Result.objects.select_related(
@@ -30,4 +35,5 @@ class ResultRetrieveUpdateDestroyAPIView(
     )
 
     serializer_class = ResultSerializer
+
     permission_classes = [CanManageResult]

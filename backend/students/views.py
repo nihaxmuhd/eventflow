@@ -22,9 +22,14 @@ from .services import (
     delete_student,
 )
 
+from core.mixins import SchoolFilteredQuerysetMixin
+
 
 @extend_schema(tags=["Students"])
-class StudentListCreateAPIView(ListCreateAPIView):
+class StudentListCreateAPIView(
+    SchoolFilteredQuerysetMixin,
+    ListCreateAPIView,
+):
 
     serializer_class = StudentSerializer
 
@@ -59,7 +64,10 @@ class StudentListCreateAPIView(ListCreateAPIView):
 
 
 @extend_schema(tags=["Students"])
-class StudentRetrieveUpdateDestroyAPIView(RetrieveUpdateDestroyAPIView):
+class StudentRetrieveUpdateDestroyAPIView(
+    SchoolFilteredQuerysetMixin,
+    RetrieveUpdateDestroyAPIView,
+):
 
     queryset = Student.objects.select_related(
         "school",
