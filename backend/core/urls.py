@@ -64,6 +64,11 @@ urlpatterns = [
         "api/registrations/",
         include("registrations.urls"),
     ),
+
+        path(
+        "api/results/",
+        include("results.urls"),
+    ),
 ]
 
 if settings.DEBUG:
