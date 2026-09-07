@@ -69,6 +69,13 @@ urlpatterns = [
         "api/results/",
         include("results.urls"),
     ),
+
+        path(
+        "api/leaderboard/",
+        include(
+            "leaderboard.urls"
+        ),
+    ),
 ]
 
 if settings.DEBUG:
