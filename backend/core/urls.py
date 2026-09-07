@@ -49,6 +49,16 @@ urlpatterns = [
         "api/students/",
         include("students.urls"),
     ),
+
+        path(
+        "api/events/",
+        include("events.urls"),
+    ),
+
+        path(
+        "api/schools/",
+        include("schools.urls"),
+    ),
 ]
 
 if settings.DEBUG:
