@@ -43,16 +43,39 @@ class HouseListCreateAPIView(
 
     def create(self, request, *args, **kwargs):
 
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+        serializer = self.get_serializer(
+            data=request.data
+        )
 
-        house = create_house(**serializer.validated_data)
+        serializer.is_valid(
+            raise_exception=True
+        )
+
+        validated_data = (
+            serializer.validated_data
+        )
+
+        if (
+            request.user.role
+            != "SUPER_ADMIN"
+        ):
+            validated_data[
+                "school"
+            ] = request.user.school
+
+        house = create_house(
+            **validated_data
+        )
 
         return Response(
             {
                 "success": True,
-                "message": "House created successfully.",
-                "data": HouseSerializer(house).data,
+                "message": (
+                    "House created successfully."
+                ),
+                "data": HouseSerializer(
+                    house
+                ).data,
             },
             status=status.HTTP_201_CREATED,
         )
@@ -85,31 +108,62 @@ class HouseRetrieveUpdateDestroyAPIView(
             partial=request.method == "PATCH",
         )
 
-        serializer.is_valid(raise_exception=True)
+        serializer.is_valid(
+            raise_exception=True
+        )
+
+        validated_data = (
+            serializer.validated_data
+        )
+
+        if (
+            request.user.role
+            != "SUPER_ADMIN"
+        ):
+            validated_data.pop(
+                "school",
+                None,
+            )
 
         house = update_house(
             house,
-            **serializer.validated_data,
+            **validated_data,
         )
 
         return Response(
             {
                 "success": True,
-                "message": "House updated successfully.",
-                "data": HouseSerializer(house).data,
+                "message": (
+                    "House updated successfully."
+                ),
+                "data": HouseSerializer(
+                    house
+                ).data,
             }
         )
+def destroy(self, request, *args, **kwargs):
 
-    def destroy(self, request, *args, **kwargs):
+    house = self.get_object()
 
-        house = self.get_object()
-
-        house.delete()
+    if house.students.exists():
 
         return Response(
             {
-                "success": True,
-                "message": "House deleted successfully.",
+                "success": False,
+                "message": (
+                    "Cannot delete house. "
+                    "Students are assigned to it."
+                ),
             },
-            status=status.HTTP_204_NO_CONTENT,
+            status=status.HTTP_400_BAD_REQUEST,
         )
+
+    house.delete()
+
+    return Response(
+        {
+            "success": True,
+            "message": "House deleted successfully.",
+        },
+        status=status.HTTP_204_NO_CONTENT,
+    )

@@ -1,17 +1,28 @@
 from .models import Registration
 
 
-def get_all_registrations():
+def get_all_registrations(
+    school=None,
+):
 
-    return (
+    queryset = (
         Registration.objects
         .select_related(
             "school",
             "student",
             "event",
         )
-        .order_by("-created_at")
+        .order_by(
+            "-created_at"
+        )
     )
+
+    if school:
+        queryset = queryset.filter(
+            school=school
+        )
+
+    return queryset
 
 
 def get_registration_by_id(
@@ -26,7 +37,7 @@ def get_registration_by_id(
             "event",
         )
         .filter(
-            id=registration_id,
+            id=registration_id
         )
         .first()
     )

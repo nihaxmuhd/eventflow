@@ -1,18 +1,31 @@
 from .models import Student
 
 
-def get_all_students():
-    return (
+def get_all_students(
+    school=None,
+):
+
+    queryset = (
         Student.objects
         .select_related(
             "school",
             "house",
         )
-        .order_by("admission_number")
+        .order_by(
+            "admission_number"
+        )
     )
+
+    if school:
+        queryset = queryset.filter(
+            school=school
+        )
+
+    return queryset
 
 
 def get_student_by_id(student_id):
+
     return (
         Student.objects
         .select_related(
@@ -25,6 +38,7 @@ def get_student_by_id(student_id):
 
 
 def get_students_by_school(school):
+
     return (
         Student.objects
         .select_related(
@@ -35,7 +49,9 @@ def get_students_by_school(school):
             school=school,
             status=Student.Status.ACTIVE,
         )
-        .order_by("admission_number")
+        .order_by(
+            "admission_number"
+        )
     )
 
 
@@ -43,6 +59,7 @@ def get_student_by_admission_number(
     school,
     admission_number,
 ):
+
     return (
         Student.objects
         .select_related(

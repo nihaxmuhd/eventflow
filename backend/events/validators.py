@@ -33,3 +33,20 @@ def validate_max_participants(
         raise serializers.ValidationError(
             "Individual events can have only 1 participant."
         )
+
+
+def validate_event_category(
+    school,
+    category,
+):
+
+    if (
+        category.school_id
+        != school.id
+    ):
+        raise serializers.ValidationError(
+            (
+                "Category must belong "
+                "to the same school."
+            )
+        )

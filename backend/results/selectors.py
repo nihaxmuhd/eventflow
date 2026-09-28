@@ -1,9 +1,11 @@
 from .models import Result
 
 
-def get_all_results():
+def get_all_results(
+    school=None,
+):
 
-    return (
+    queryset = (
         Result.objects
         .select_related(
             "school",
@@ -11,9 +13,16 @@ def get_all_results():
             "registration",
         )
         .order_by(
-            "position",
+            "position"
         )
     )
+
+    if school:
+        queryset = queryset.filter(
+            school=school
+        )
+
+    return queryset
 
 
 def get_result_by_id(
@@ -28,7 +37,7 @@ def get_result_by_id(
             "registration",
         )
         .filter(
-            id=result_id,
+            id=result_id
         )
         .first()
     )
@@ -41,12 +50,12 @@ def get_results_by_event(
     return (
         Result.objects
         .select_related(
-            "registration",
+            "registration"
         )
         .filter(
-            event=event,
+            event=event
         )
         .order_by(
-            "position",
+            "position"
         )
     )

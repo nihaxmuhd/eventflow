@@ -6,6 +6,7 @@ from .views import (
     LogoutAPIView,
     MeAPIView,
     UserListAPIView,
+    UserCreateAPIView,
 )
 
 urlpatterns = [
@@ -40,6 +41,12 @@ urlpatterns = [
     "logout/",
     LogoutAPIView.as_view(),
     name="logout",
+    ),
+
+    path(
+    "users/create/",
+    UserCreateAPIView.as_view(),
+    name="user-create",
     ),
 
 ]

@@ -1,15 +1,26 @@
 from .models import House
 
 
-def get_all_houses():
-    return (
+def get_all_houses(
+    school=None,
+):
+
+    queryset = (
         House.objects
         .select_related("school")
         .order_by("name")
     )
 
+    if school:
+        queryset = queryset.filter(
+            school=school
+        )
+
+    return queryset
+
 
 def get_house_by_id(house_id):
+
     return (
         House.objects
         .select_related("school")
@@ -19,6 +30,7 @@ def get_house_by_id(house_id):
 
 
 def get_houses_by_school(school):
+
     return (
         House.objects
         .select_related("school")
@@ -30,7 +42,11 @@ def get_houses_by_school(school):
     )
 
 
-def get_house_by_code(school, code):
+def get_house_by_code(
+    school,
+    code,
+):
+
     return (
         House.objects
         .filter(

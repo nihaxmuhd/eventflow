@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     "leaderboard",
     "common",
     "dashboard",
+    "audits",
 ]
 
 MIDDLEWARE = [

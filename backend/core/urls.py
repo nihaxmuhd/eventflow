@@ -72,16 +72,17 @@ urlpatterns = [
 
         path(
         "api/leaderboard/",
-        include(
-            "leaderboard.urls"
-        ),
+        include("leaderboard.urls"),
     ),
 
-    path(
-    "api/dashboard/",
-    include(
-            "dashboard.urls"
-        ),
+        path(
+        "api/dashboard/",
+        include("dashboard.urls"),
+    ),
+
+        path(
+        "api/audits/",
+        include("audits.urls"),
     ),
 ]
 

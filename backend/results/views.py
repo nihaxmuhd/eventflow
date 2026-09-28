@@ -20,7 +20,24 @@ class ResultListCreateAPIView(
 
     serializer_class = ResultSerializer
 
-    permission_classes = [CanManageResult]
+    permission_classes = [
+        CanManageResult
+    ]
+
+    def perform_create(
+        self,
+        serializer,
+    ):
+
+        if (
+            self.request.user.role
+            != "SUPER_ADMIN"
+        ):
+            serializer.save(
+                school=self.request.user.school
+            )
+        else:
+            serializer.save()
 
 
 class ResultRetrieveUpdateDestroyAPIView(
@@ -37,3 +54,17 @@ class ResultRetrieveUpdateDestroyAPIView(
     serializer_class = ResultSerializer
 
     permission_classes = [CanManageResult]
+
+    def perform_update(self, serializer,):
+
+        if (
+            self.request.user.role
+            != "SUPER_ADMIN"
+        ):
+
+            serializer.validated_data.pop(
+                "school",
+                None,
+            )
+
+        serializer.save()

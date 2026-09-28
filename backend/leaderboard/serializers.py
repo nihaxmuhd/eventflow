@@ -5,6 +5,8 @@ class HouseLeaderboardSerializer(
     serializers.Serializer
 ):
 
+    rank = serializers.IntegerField()
+
     house_id = serializers.IntegerField()
 
     house_name = serializers.CharField()
@@ -15,6 +17,8 @@ class HouseLeaderboardSerializer(
 class StudentLeaderboardSerializer(
     serializers.Serializer
 ):
+
+    rank = serializers.IntegerField()
 
     student_id = serializers.IntegerField()
 

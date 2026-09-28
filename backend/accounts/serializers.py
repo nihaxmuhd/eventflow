@@ -49,3 +49,36 @@ class LoginSerializer(serializers.Serializer):
 class LogoutSerializer(serializers.Serializer):
 
     refresh = serializers.CharField(required=True)
+
+
+class UserCreateSerializer(serializers.ModelSerializer):
+
+    password = serializers.CharField(
+        write_only=True,
+    )
+
+    class Meta:
+        model = User
+        fields = (
+            "username",
+            "password",
+            "first_name",
+            "last_name",
+            "email",
+            "phone",
+            "role",
+            "school",
+        )
+
+    def create(self, validated_data):
+
+        password = validated_data.pop(
+            "password"
+        )
+
+        user = User.objects.create_user(
+            password=password,
+            **validated_data,
+        )
+
+        return user

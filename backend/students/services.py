@@ -1,3 +1,6 @@
+from rest_framework.exceptions import ValidationError
+from django.db.models import ProtectedError
+
 from .models import Student
 from .validators import (
     validate_admission_number,
@@ -17,13 +20,45 @@ def create_student(**data):
         email=data.get("email"),
     )
 
+    house = data.get("house")
+
+    if house and house.school_id != data["school"].id:
+        raise ValidationError(
+            {
+                "house": (
+                    "Selected house does not belong "
+                    "to this school."
+                )
+            }
+        )
+
     return Student.objects.create(**data)
 
 
 def update_student(student, **data):
 
+    school = data.get(
+        "school",
+        student.school,
+    )
+
+    house = data.get(
+        "house",
+        student.house,
+    )
+
+    if house and house.school_id != school.id:
+        raise ValidationError(
+            {
+                "house": (
+                    "Selected house does not belong "
+                    "to this school."
+                )
+            }
+        )
+
     validate_admission_number(
-        school=data.get("school", student.school),
+        school=school,
         admission_number=data.get(
             "admission_number",
             student.admission_number,
@@ -32,8 +67,11 @@ def update_student(student, **data):
     )
 
     validate_student_email(
-        school=data.get("school", student.school),
-        email=data.get("email", student.email),
+        school=school,
+        email=data.get(
+            "email",
+            student.email,
+        ),
         instance=student,
     )
 
@@ -45,6 +83,21 @@ def update_student(student, **data):
     return student
 
 
+from django.db.models import ProtectedError
+
+
 def delete_student(student):
 
-    student.delete()
+    try:
+        student.delete()
+
+    except ProtectedError:
+
+        raise ValidationError(
+            {
+                "student": (
+                    "Cannot delete student. "
+                    "Related records exist."
+                )
+            }
+        )

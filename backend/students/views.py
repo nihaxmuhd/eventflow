@@ -31,6 +31,8 @@ class StudentListCreateAPIView(
     ListCreateAPIView,
 ):
 
+    queryset = get_all_students()
+
     serializer_class = StudentSerializer
 
     def get_permissions(self):
@@ -40,24 +42,41 @@ class StudentListCreateAPIView(
 
         return [CanManageStudent()]
 
-    def get_queryset(self):
-
-        return get_all_students()
-
     def create(self, request, *args, **kwargs):
 
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+        serializer = self.get_serializer(
+            data=request.data
+        )
+
+        serializer.is_valid(
+            raise_exception=True
+        )
+
+        validated_data = (
+            serializer.validated_data
+        )
+
+        if (
+            request.user.role
+            != "SUPER_ADMIN"
+        ):
+            validated_data[
+                "school"
+            ] = request.user.school
 
         student = create_student(
-            **serializer.validated_data,
+            **validated_data
         )
 
         return Response(
             {
                 "success": True,
-                "message": "Student created successfully.",
-                "data": StudentSerializer(student).data,
+                "message": (
+                    "Student created successfully."
+                ),
+                "data": StudentSerializer(
+                    student
+                ).data,
             },
             status=status.HTTP_201_CREATED,
         )
@@ -93,18 +112,37 @@ class StudentRetrieveUpdateDestroyAPIView(
             partial=request.method == "PATCH",
         )
 
-        serializer.is_valid(raise_exception=True)
+        serializer.is_valid(
+            raise_exception=True
+        )
+
+        validated_data = (
+            serializer.validated_data
+        )
+
+        if (
+            request.user.role
+            != "SUPER_ADMIN"
+        ):
+            validated_data.pop(
+                "school",
+                None,
+            )
 
         student = update_student(
             student,
-            **serializer.validated_data,
+            **validated_data,
         )
 
         return Response(
             {
                 "success": True,
-                "message": "Student updated successfully.",
-                "data": StudentSerializer(student).data,
+                "message": (
+                    "Student updated successfully."
+                ),
+                "data": StudentSerializer(
+                    student
+                ).data,
             }
         )
 

@@ -1,7 +1,8 @@
 from rest_framework import serializers
 
 from .models import Result
-from .validators import validate_position
+from .validators import (validate_position,
+    validate_result_data,)
 
 
 class ResultSerializer(
@@ -22,6 +23,49 @@ class ResultSerializer(
 
         validate_position(
             attrs.get("position")
+        )
+
+        school = attrs.get(
+            "school",
+            getattr(
+                self.instance,
+                "school",
+                None,
+            ),
+        )
+
+        event = attrs.get(
+            "event",
+            getattr(
+                self.instance,
+                "event",
+                None,
+            ),
+        )
+
+        registration = attrs.get(
+            "registration",
+            getattr(
+                self.instance,
+                "registration",
+                None,
+            ),
+        )
+
+        position = attrs.get(
+            "position",
+            getattr(
+                self.instance,
+                "position",
+                None,
+            ),
+        )
+
+        validate_result_data(
+            school,
+            event,
+            registration,
+            position,
         )
 
         return attrs
