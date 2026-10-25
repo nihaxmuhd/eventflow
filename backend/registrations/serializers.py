@@ -14,6 +14,12 @@ class RegistrationSerializer(
 
         fields = "__all__"
 
+        read_only_fields = (
+            "registration_number",
+            "created_at",
+            "updated_at",
+        )
+
     def validate(self, attrs):
 
         if self.instance is None:

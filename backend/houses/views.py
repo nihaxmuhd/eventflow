@@ -6,6 +6,7 @@ from rest_framework.generics import (
     RetrieveUpdateDestroyAPIView,
 )
 from rest_framework.response import Response
+from django.db import transaction
 
 from .models import House
 from .permissions import (
@@ -22,6 +23,7 @@ from .services import (
 )
 
 from core.mixins import SchoolFilteredQuerysetMixin
+from common.realtime import entity_payload, has_relevant_changes, publish_event_on_commit
 
 
 @extend_schema(tags=["Houses"])
@@ -42,9 +44,14 @@ class HouseListCreateAPIView(
         return [CanManageHouse()]
 
     def create(self, request, *args, **kwargs):
+        # Administrators are always scoped to the school on their account.
+        # Supply it before validation because the model relation is required.
+        data = request.data.copy()
+        if request.user.role != "SUPER_ADMIN":
+            data["school"] = request.user.school_id
 
         serializer = self.get_serializer(
-            data=request.data
+            data=data
         )
 
         serializer.is_valid(
@@ -63,9 +70,13 @@ class HouseListCreateAPIView(
                 "school"
             ] = request.user.school
 
-        house = create_house(
-            **validated_data
-        )
+        with transaction.atomic():
+            house = create_house(**validated_data)
+            publish_event_on_commit(
+                event_type="house.created",
+                school_id=house.school_id,
+                payload=entity_payload(house),
+            )
 
         return Response(
             {
@@ -102,9 +113,13 @@ class HouseRetrieveUpdateDestroyAPIView(
 
         house = self.get_object()
 
+        data = request.data.copy()
+        if request.user.role != "SUPER_ADMIN":
+            data["school"] = house.school_id
+
         serializer = self.get_serializer(
             house,
-            data=request.data,
+            data=data,
             partial=request.method == "PATCH",
         )
 
@@ -125,10 +140,15 @@ class HouseRetrieveUpdateDestroyAPIView(
                 None,
             )
 
-        house = update_house(
-            house,
-            **validated_data,
-        )
+        changed = has_relevant_changes(house, validated_data)
+        if changed:
+            with transaction.atomic():
+                house = update_house(house, **validated_data)
+                publish_event_on_commit(
+                    event_type="house.updated",
+                    school_id=house.school_id,
+                    payload=entity_payload(house),
+                )
 
         return Response(
             {
@@ -141,29 +161,31 @@ class HouseRetrieveUpdateDestroyAPIView(
                 ).data,
             }
         )
-def destroy(self, request, *args, **kwargs):
 
-    house = self.get_object()
+    def destroy(self, request, *args, **kwargs):
+        house = self.get_object()
 
-    if house.students.exists():
+        if house.students.exists():
+            return Response(
+                {
+                    "success": False,
+                    "message": "Cannot delete house. Students are assigned to it.",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        payload = entity_payload(house)
+        school_id = house.school_id
+        with transaction.atomic():
+            house.delete()
+            publish_event_on_commit(
+                event_type="house.deleted", school_id=school_id, payload=payload
+            )
 
         return Response(
             {
-                "success": False,
-                "message": (
-                    "Cannot delete house. "
-                    "Students are assigned to it."
-                ),
+                "success": True,
+                "message": "House deleted successfully.",
             },
-            status=status.HTTP_400_BAD_REQUEST,
+            status=status.HTTP_204_NO_CONTENT,
         )
-
-    house.delete()
-
-    return Response(
-        {
-            "success": True,
-            "message": "House deleted successfully.",
-        },
-        status=status.HTTP_204_NO_CONTENT,
-    )

@@ -22,7 +22,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = config("SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = config("DEBUG", cast=bool)
+# Accept the deployment value used by this project ("release") as production
+# mode while retaining the usual boolean environment values.
+DEBUG = config(
+    "DEBUG",
+    default=False,
+    cast=lambda value: str(value).strip().lower() in {"1", "true", "yes", "on", "debug"},
+)
 
 ALLOWED_HOSTS = ["127.0.0.1", "localhost"]
 
@@ -30,13 +36,15 @@ ALLOWED_HOSTS = ["127.0.0.1", "localhost"]
 # Application definition
 
 INSTALLED_APPS = [
-
+    "daphne",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+
+    "channels",
 
     "rest_framework",
     "corsheaders",
@@ -119,6 +127,27 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'core.wsgi.application'
 
+CHANNEL_LAYERS = {
+    "default": {
+        # Preserve channels-redis defaults.  The wrapper only identifies the
+        # failing operation when Redis raises; it does not alter timeouts or
+        # reconnect behaviour.
+        "BACKEND": "common.channel_layer.InstrumentedRedisChannelLayer",
+        "CONFIG": {
+            # channels-redis blocks in BZPOPMIN for five seconds. redis-py
+            # 8.1 defaults its socket timeout to the same duration, so the
+            # client can time out before Redis returns the expected empty
+            # blocking-pop response. The read deadline must exceed that
+            # intentional server-side wait.
+            "hosts": [{
+                "host": "127.0.0.1",
+                "port": 6379,
+                "socket_connect_timeout": 5,
+                "socket_timeout": 10,
+            }],
+        },
+    },
+}
 
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases

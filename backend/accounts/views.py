@@ -3,6 +3,7 @@ from rest_framework.generics import ListAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from django.db import transaction
 
 from drf_spectacular.utils import extend_schema
 
@@ -18,6 +19,7 @@ from .services import (
     login_user,
     logout_user,
 )
+from common.realtime import entity_payload, publish_event_on_commit
 
 
 class UserListAPIView(ListAPIView):
@@ -205,7 +207,13 @@ class UserCreateAPIView(APIView):
                 "school"
             ] = current_user.school
 
-        user = serializer.save()
+        with transaction.atomic():
+            user = serializer.save()
+            publish_event_on_commit(
+                event_type="user.created",
+                school_id=user.school_id,
+                payload=entity_payload(user, key="user_id"),
+            )
 
         return Response(
             {

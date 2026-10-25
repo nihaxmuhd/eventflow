@@ -22,7 +22,7 @@ class ResultSerializer(
     def validate(self, attrs):
 
         validate_position(
-            attrs.get("position")
+            attrs.get("position", getattr(self.instance, "position", None))
         )
 
         school = attrs.get(
@@ -66,6 +66,7 @@ class ResultSerializer(
             event,
             registration,
             position,
+            instance=self.instance,
         )
 
         return attrs

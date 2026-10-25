@@ -1,6 +1,7 @@
 from rest_framework import status
 from rest_framework import generics
 from rest_framework.response import Response
+from django.db import transaction
 
 from .models import Registration
 from .serializers import RegistrationSerializer
@@ -15,6 +16,15 @@ from .services import (
 from core.mixins import (
     SchoolFilteredQuerysetMixin,
 )
+from common.realtime import has_relevant_changes, publish_event_on_commit
+
+
+def registration_event_payload(registration):
+    return {
+        "registration_id": registration.id,
+        "event_id": registration.event_id,
+        "status": registration.status,
+    }
 
 
 class RegistrationListCreateAPIView(
@@ -43,9 +53,11 @@ class RegistrationListCreateAPIView(
         **kwargs,
     ):
 
-        serializer = self.get_serializer(
-            data=request.data
-        )
+        data = request.data.copy()
+        if request.user.role != "SUPER_ADMIN":
+            data["school"] = request.user.school_id
+
+        serializer = self.get_serializer(data=data)
 
         serializer.is_valid(
             raise_exception=True
@@ -63,11 +75,13 @@ class RegistrationListCreateAPIView(
                 "school"
             ] = request.user.school
 
-        registration = (
-            create_registration(
-                **validated_data
+        with transaction.atomic():
+            registration = create_registration(**validated_data)
+            publish_event_on_commit(
+                event_type="registration.created",
+                school_id=registration.school_id,
+                payload=registration_event_payload(registration),
             )
-        )
 
         return Response(
             {
@@ -116,9 +130,13 @@ class RegistrationRetrieveUpdateDestroyAPIView(
             self.get_object()
         )
 
+        data = request.data.copy()
+        if request.user.role != "SUPER_ADMIN":
+            data["school"] = registration.school_id
+
         serializer = self.get_serializer(
             registration,
-            data=request.data,
+            data=data,
             partial=(
                 request.method
                 == "PATCH"
@@ -142,12 +160,14 @@ class RegistrationRetrieveUpdateDestroyAPIView(
                 None,
             )
 
-        registration = (
-            update_registration(
-                registration,
-                **validated_data,
-            )
-        )
+        if has_relevant_changes(registration, validated_data):
+            with transaction.atomic():
+                registration = update_registration(registration, **validated_data)
+                publish_event_on_commit(
+                    event_type="registration.updated",
+                    school_id=registration.school_id,
+                    payload=registration_event_payload(registration),
+                )
 
         return Response(
             {
@@ -175,9 +195,15 @@ class RegistrationRetrieveUpdateDestroyAPIView(
             self.get_object()
         )
 
-        delete_registration(
-            registration
-        )
+        payload = registration_event_payload(registration)
+        school_id = registration.school_id
+        with transaction.atomic():
+            delete_registration(registration)
+            publish_event_on_commit(
+                event_type="registration.deleted",
+                school_id=school_id,
+                payload=payload,
+            )
 
         return Response(
             {

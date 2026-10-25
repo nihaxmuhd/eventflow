@@ -19,10 +19,9 @@ def validate_admission_number(
     if queryset.exists():
         raise ValidationError(
             {
-                "admission_number": (
-                    "A student with this admission number "
-                    "already exists in this school."
-                )
+                "admission_number": [
+                    "A student with this admission number already exists."
+                ]
             }
         )
 
@@ -46,9 +45,8 @@ def validate_student_email(
     if queryset.exists():
         raise ValidationError(
             {
-                "email": (
-                    "This email is already used by another "
-                    "student in this school."
-                )
+                "email": [
+                    "A student with this email address already exists."
+                ]
             }
         )

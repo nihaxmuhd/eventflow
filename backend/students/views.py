@@ -6,6 +6,7 @@ from rest_framework.generics import (
     RetrieveUpdateDestroyAPIView,
 )
 from rest_framework.response import Response
+from django.db import transaction
 
 from .models import Student
 from .permissions import (
@@ -23,6 +24,7 @@ from .services import (
 )
 
 from core.mixins import SchoolFilteredQuerysetMixin
+from common.realtime import entity_payload, has_relevant_changes, publish_event_on_commit
 
 
 @extend_schema(tags=["Students"])
@@ -43,9 +45,16 @@ class StudentListCreateAPIView(
         return [CanManageStudent()]
 
     def create(self, request, *args, **kwargs):
+        # A school administrator's school comes from their authenticated
+        # account, never from a client-controlled request field.  It must be
+        # present before serializer validation because Student.school is
+        # required.
+        data = request.data.copy()
+        if request.user.role != "SUPER_ADMIN":
+            data["school"] = request.user.school_id
 
         serializer = self.get_serializer(
-            data=request.data
+            data=data
         )
 
         serializer.is_valid(
@@ -64,9 +73,13 @@ class StudentListCreateAPIView(
                 "school"
             ] = request.user.school
 
-        student = create_student(
-            **validated_data
-        )
+        with transaction.atomic():
+            student = create_student(**validated_data)
+            publish_event_on_commit(
+                event_type="student.created",
+                school_id=student.school_id,
+                payload=entity_payload(student),
+            )
 
         return Response(
             {
@@ -106,9 +119,16 @@ class StudentRetrieveUpdateDestroyAPIView(
 
         student = self.get_object()
 
+        # Keep PUT validation and school isolation consistent with create.
+        # PATCH callers may omit school, but an administrator must never be
+        # able to choose one through the request body.
+        data = request.data.copy()
+        if request.user.role != "SUPER_ADMIN":
+            data["school"] = student.school_id
+
         serializer = self.get_serializer(
             student,
-            data=request.data,
+            data=data,
             partial=request.method == "PATCH",
         )
 
@@ -129,10 +149,15 @@ class StudentRetrieveUpdateDestroyAPIView(
                 None,
             )
 
-        student = update_student(
-            student,
-            **validated_data,
-        )
+        changed = has_relevant_changes(student, validated_data)
+        if changed:
+            with transaction.atomic():
+                student = update_student(student, **validated_data)
+                publish_event_on_commit(
+                    event_type="student.updated",
+                    school_id=student.school_id,
+                    payload=entity_payload(student),
+                )
 
         return Response(
             {
@@ -150,7 +175,13 @@ class StudentRetrieveUpdateDestroyAPIView(
 
         student = self.get_object()
 
-        delete_student(student)
+        payload = entity_payload(student)
+        school_id = student.school_id
+        with transaction.atomic():
+            delete_student(student)
+            publish_event_on_commit(
+                event_type="student.deleted", school_id=school_id, payload=payload
+            )
 
         return Response(
             {

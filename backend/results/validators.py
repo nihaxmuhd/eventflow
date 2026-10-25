@@ -26,6 +26,7 @@ def validate_result_data(
     event,
     registration,
     position,
+    instance=None,
 ):
 
     # School validation
@@ -71,6 +72,9 @@ def validate_result_data(
         event=event,
         position=position,
     )
+
+    if instance:
+        existing = existing.exclude(pk=instance.pk)
 
     if existing.exists():
 

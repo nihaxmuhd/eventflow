@@ -40,3 +40,9 @@ class StudentSerializer(serializers.ModelSerializer):
             "updated_at",
             "full_name",
         )
+
+        # Duplicate checks are scoped to a school and are performed by the
+        # service after a school administrator's server-owned school has been
+        # injected.  DRF's generated composite validator instead emits a
+        # non-field error, hiding the actionable admission_number field.
+        validators = []
